@@ -159,21 +159,23 @@ private:
                     int top = m_record.top();
                     m_record.pop();
                     m_exist[top] = false;      
-                    
+                    tmp.push_back(top);
                     // 标识
                     p->m_belong[top] = p->m_scc_flag + 1;
-                    tmp.push_back(top);
 
                     if (top == cur)
                         break;
                 }
 
-                if (!tmp.empty())
+                if (tmp.size() >= 3)
+                // if (!tmp.empty())
                 {
-                    // 存储
-                    //p->m_scc.push_back(tmp);
-                    p->m_scc.emplace_back(tmp.begin(), tmp.end());
+                    // 标识
                     ++ p->m_scc_flag;
+                    for (const auto& item : tmp)
+                        p->m_belong[item] = p->m_scc_flag; 
+                    // 存储
+                    p->m_scc.emplace_back(tmp.begin(), tmp.end());
                     p->m_condition.notify_one();    
                 }
             }
@@ -294,6 +296,9 @@ private:
 
 int main(int argc, char* argv[])
 {
+    freopen("/root/in.txt", "r", stdin);
+    freopen("/root/out.txt", "w", stdout);
+
     int from, to, money;
     char ch;
     
