@@ -77,6 +77,8 @@ public:
 
             row = std::move(res);
         }
+
+        // 排序
         std::sort(m_cycle.begin(), m_cycle.end(), 
         [](const std::vector<int>& lhs, const std::vector<int>& rhs)
         {
@@ -87,8 +89,10 @@ public:
             return lhs < rhs;    
         });
 
-        std::cout << "SCC = " << m_scc_flag << std::endl;
-        std::cout << "Cycle = " << m_cycle.size() << std::endl;
+        // 去重
+        auto iter = std::unique(m_cycle.begin(), m_cycle.end());
+        m_cycle.erase(iter, m_cycle.end());
+        std::cout << "num = " << m_cycle.size() << std::endl;
         for (auto& row : m_cycle)
         {
             for (auto& item : row)
@@ -161,14 +165,14 @@ private:
                     m_exist[top] = false;      
                     tmp.push_back(top);
                     // 标识
-                    p->m_belong[top] = p->m_scc_flag + 1;
+                    //p->m_belong[top] = p->m_scc_flag + 1;
 
                     if (top == cur)
                         break;
                 }
 
-                if (tmp.size() >= 3)
-                // if (!tmp.empty())
+                //if (tmp.size() >= 3)
+                if (!tmp.empty())
                 {
                     // 标识
                     ++ p->m_scc_flag;
@@ -227,6 +231,7 @@ private:
                 if (scc_index < p->m_scc_flag)
                 {
                     m_scc_index = scc_index;     
+                    //std::cout << scc_index << std::endl;
                     exec();
                 }
             }
@@ -296,8 +301,10 @@ private:
 
 int main(int argc, char* argv[])
 {
-    freopen("/root/in.txt", "r", stdin);
-    freopen("/root/out.txt", "w", stdout);
+    //freopen("/root/in.txt", "r", stdin);
+    //freopen("/root/out.txt", "w", stdout);
+
+    std::ios::sync_with_stdio(false);
 
     int from, to, money;
     char ch;
