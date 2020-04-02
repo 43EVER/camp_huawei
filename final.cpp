@@ -179,7 +179,7 @@ private:
                 }
 
                 if (m_exist[next])
-                    m_low[cur] = std::min(m_low[cur], m_low[next]);
+                    m_low[cur] = std::min(m_low[cur], m_time[next]);
             }
 
             // 标识并存储强连通分量
