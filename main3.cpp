@@ -57,6 +57,10 @@ public:
 
         SCC(this)();
 
+        //std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::cout << "sccsize = " << m_scc.size() << std::endl;
+        return;
+
         // 关闭线程
         m_shutdown = true;
         m_condition.notify_all();
@@ -64,6 +68,7 @@ public:
             if (item.joinable())
                 item.join();
 
+        return;
         // 将离散化的数据恢复
         for (auto& row : m_cycle)
         {
@@ -124,6 +129,10 @@ private:
             p->m_belong.resize(p->m_vertex + 1);
         }
 
+        ~SCC()
+        {
+        }
+
         void operator()()
         {
             for (int i = 1; i <= p->m_vertex; ++ i)
@@ -164,20 +173,18 @@ private:
                     m_record.pop();
                     m_exist[top] = false;      
                     tmp.push_back(top);
-                    // 标识
-                    //p->m_belong[top] = p->m_scc_flag + 1;
+
+                    // 标记
+                    p->m_belong[top] = p->m_scc_flag + 1; 
 
                     if (top == cur)
                         break;
                 }
 
                 //if (tmp.size() >= 3)
-                if (!tmp.empty())
+                if (true)
                 {
-                    // 标识
                     ++ p->m_scc_flag;
-                    for (const auto& item : tmp)
-                        p->m_belong[item] = p->m_scc_flag; 
                     // 存储
                     p->m_scc.emplace_back(tmp.begin(), tmp.end());
                     p->m_condition.notify_one();    
@@ -212,14 +219,18 @@ private:
             m_depth.resize(p->m_vertex + 1);
         }  
 
+        ~ThreadWorker()
+        {
+        }
+
         void operator()()
         {
-            while (!p->m_shutdown || p->m_processed < p->m_scc_flag)
+            while (!p->m_shutdown || p->m_processed < p->m_scc.size())
             {
                 int scc_index;     
                 {
                     std::unique_lock<std::mutex> ulock(p->m_mutex);
-                    if (p->m_processed >= p->m_scc_flag)     
+                    if (p->m_processed >= p->m_scc.size())     
                         p->m_condition.wait(ulock);
                     scc_index = p->m_processed;
                     ++ p->m_processed;
@@ -228,10 +239,13 @@ private:
                 // 虽然上面的代码进行过判断
                 // 但由于关闭线程池是会调用 notify_all
                 // 所以需要进行二次判断
-                if (scc_index < p->m_scc_flag)
+                std::cout << "#" << scc_index << " " << p->m_scc.size() << std::endl; 
+                if (scc_index < p->m_scc.size())
                 {
                     m_scc_index = scc_index;     
-                    //std::cout << scc_index << std::endl;
+                    std::unique_lock<std::mutex> ulock(p->m_mutex);
+                std::cout << ">" << scc_index << " " << p->m_scc.size() << std::endl; 
+                    ulock.unlock();
                     exec();
                 }
             }
