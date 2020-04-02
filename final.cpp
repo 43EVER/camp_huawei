@@ -44,7 +44,6 @@ public:
         {
             m_b2s[to] = ++ m_discrete_value;    
             m_s2b[m_discrete_value] = to;
-            //to = m_discrete_value;
         }
 
         // 添加有向边
@@ -67,7 +66,7 @@ public:
             m_thread_pool.emplace_back(ThreadWorker(this));
 
         // 生产者
-        SCC1(this)();
+        SCC(this)();
 
         // 关闭线程池
         m_shutdown = true;
@@ -140,88 +139,6 @@ private:
     std::condition_variable m_condition;    // 条件变量
     
     // 计算强连通分量
-    class SCC1
-    {
-    public:
-        explicit SCC1(MoneyFlow* graph)
-            : p(graph)
-        {
-            m_time.resize(p->m_vertex + 1);
-            m_low.resize(p->m_vertex + 1);
-            m_exist.resize(p->m_vertex + 1);
-
-            p->m_belong.resize(p->m_vertex + 1);
-        }
-
-        void operator()()
-        {
-            for (int i = 1; i <= p->m_vertex; ++ i)
-                if (m_time[i] == 0)
-                    tarjan(i);    
-        }
-
-    private:     
-        void tarjan(int cur)
-        {
-            ++ m_timestamp;     
-            m_time[cur] = m_low[cur] = m_timestamp; 
-
-            m_record.push(cur);
-            m_exist[cur] = true;
-            
-            for (const auto& next : p->m_graph[cur])
-            {
-                if (m_time[next] == 0)
-                {
-                    tarjan(next);
-                    m_low[cur] = std::min(m_low[cur], m_low[next]);    
-                    continue;
-                }
-
-                if (m_exist[next])
-                    m_low[cur] = std::min(m_low[cur], m_time[next]);
-            }
-
-            // 标识并存储强连通分量
-            if (m_time[cur] == m_low[cur])
-            {
-                std::vector<int> tmp;
-                
-                while (!m_record.empty())
-                {
-                    int top = m_record.top();
-                    m_record.pop();
-                    m_exist[top] = false;      
-                    tmp.push_back(top);
-
-                    // 标记
-                    p->m_belong[top] = p->m_scc_flag + 1; 
-
-                    if (top == cur)
-                        break;
-                }
-
-                //if (tmp.size() >= 3)
-                if (true)
-                {
-                    ++ p->m_scc_flag;
-                    // 存储
-                    p->m_scc.emplace_back(tmp.begin(), tmp.end());
-                    p->m_condition.notify_one();    
-                }
-            }
-        }
-
-        int m_timestamp{ 0 }; 
-        std::vector<int> m_time;
-        std::vector<int> m_low;
-
-        std::vector<bool> m_exist;
-        std::stack<int> m_record;
-
-        MoneyFlow* p;
-    };
-    // 计算强连通分量
     class SCC
     {
     public:
@@ -259,7 +176,7 @@ private:
                 }
 
                 if (m_exist[to])
-                    m_low[from] = std::min(m_low[from], m_low[to]);
+                    m_low[from] = std::min(m_low[from], m_time[to]);
             }
 
             // 1. 标识强连通分量
@@ -342,7 +259,7 @@ private:
             // 当强连通分量中的节点数小于 3 时不进行计算
             if (p->m_scc[m_process].size() < 3)
                 return; 
-            std::cout << m_process << " " << p->m_scc.size() << std::endl;
+
             // 初始化相关数据结构
             for (auto& item : m_path)
                 item = 0;
