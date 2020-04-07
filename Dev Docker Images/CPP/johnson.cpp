@@ -171,11 +171,6 @@ int main() {
     while (fs >> u >> c >> v >> c >> w)
         g[u].insert(v);
 
-    for (auto &v : g) {
-        if (v.second.size() > 10) cout << v.first << " ";
-        while (v.second.size() > 10) v.second.erase(v.second.begin());
-    }
-
     Johnson johnson;
     std::thread th([&johnson]
         {
@@ -200,6 +195,7 @@ int main() {
          return a < b;
      });
 
+    ios::sync_with_stdio(false);
      cout << ans2.size() << endl;
      for (auto vec : ans2) {
          for (auto i : vec) cout << i << ",";
