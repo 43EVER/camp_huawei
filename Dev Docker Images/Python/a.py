@@ -1,8 +1,8 @@
 from cyaron import *
 
 
-n = 5000
-m = 8000
+n = 2500
+m = 25000
 
 graph = Graph.DAG(n, m, loop=True)
 

@@ -27,3 +27,4 @@ FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 #    && rm -rf /var/lib/apt/lists/*
 # ENV DEBIAN_FRONTEND=dialog
 
+RUN pip install cyaron
