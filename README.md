@@ -18,3 +18,10 @@
 
 [Johson 找图中所有简单环](./Algorithms/Johson's-Algorithm.md)
 
+
+
+#### 效率截图
+
+递归写法 + vec + 出度+入度 rank，90w 数据
+
+![image-20200408132834331](./image-20200408132834331.png)

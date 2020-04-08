@@ -11,6 +11,7 @@
 using namespace std;
 
 const int N = 6e5 + 10;
+int realN;
 
 typedef vector<vector<int>> VVI;
 
@@ -23,7 +24,7 @@ private:
     VVI* g;
 
     void init() {
-        for (int i = 0; i < N; i++) dfn[i] = low[i] = vis[i] = 0;
+        for (int i = 0; i < realN; i++) dfn[i] = low[i] = vis[i] = 0;
         TIME = 1;
         tt = 0;
         sccs = nullptr;
@@ -71,7 +72,7 @@ public:
     void getSccs(decltype(g) g, decltype(sccs) sccs) {
         this->g = g;
         this->sccs = sccs;
-        for (int i = 0; i < N; i++)
+        for (int i = 0; i < realN; i++)
             if (!dfn[i]) dfs(i);
         init();
     }
@@ -80,8 +81,8 @@ public:
 class Util {
 public:
     VVI getSubGraphBySet(const VVI& g, const unordered_set<int>& s, vector<int>& vertex_rank, bool exclude = false) {
-        VVI sub(N);
-        for (int from = 0; from < N; from++)
+        VVI sub(realN);
+        for (int from = 0; from < realN; from++)
             if (s.count(from) != exclude) for (auto to : g[from]) if (s.count(to) != exclude) {
                 sub[from].push_back(to);
                 vertex_rank[from]++;
@@ -92,7 +93,7 @@ public:
 
     VVI uniformData(const VVI& vec) {
         VVI data;
-        for (auto item : vec) {
+        for (auto & item : vec) {
             auto it = min_element(item.begin(), item.end());
             vector<int> tmp(it, item.end());
             tmp.insert(tmp.end(), item.begin(), it);
@@ -122,7 +123,7 @@ private:
     VVI circles;
 
     void init() {
-        for (int i = 0; i < N; i++) blocked_set[i] = false, blocked_map[i].clear();
+        for (int i = 0; i < realN; i++) blocked_set[i] = false, blocked_map[i].clear();
         tt = 0;
     }
 
@@ -141,7 +142,10 @@ private:
         if (tt <= 7 && g[from].size()) {
             for (auto to : g[from]) {
                 if (to == start) {
-                    if (tt >= 3) circles.emplace_back(vector<int>(stk.begin() + 1, stk.begin() + 1 + tt)), circle_count++;
+                    if (tt >= 3) {
+                        circles.emplace_back(stk.begin() + 1, stk.begin() + 1 + tt);
+                        circle_count++;
+                    }
                     findCircle = true;
                 }
                 else if (tt < 7 && !blocked_set[to]) {
@@ -178,17 +182,17 @@ public:
             unordered_set<int> usedVrtxes;
             sccs_size = sccs.size();
             for (const auto& scc : sccs) {
-                vector<int> rank(N);
+                vector<int> rank(realN);
                 VVI subGraph = util.getSubGraphBySet(g, scc, rank);
                 int start = *scc.begin();
-                for (int i = 0; i < N; i++) if (rank[i] > rank[start]) start = i;;
+                for (int i = 0; i < realN; i++) if (rank[i] > rank[start]) start = i;;
                 start_index = start;
                 start_index_rank = rank[start];
                 usedVrtxes.insert(start);
                 init();
                 dfs(subGraph, start, start);
             }
-            vector<int> rank(N);
+            vector<int> rank(realN);
             g = util.getSubGraphBySet(g, usedVrtxes, rank, true);
             sccs.clear();
             tarjan.getSccs(&g, &sccs);
@@ -210,14 +214,20 @@ int main() {
     vector<pair<int, int>> data;
     vector<int> v_hash;
     unordered_map<int, int> v_uhash;
-    while (cin >> u >> c >> v >> c >> w)
-        data.push_back({ u, v }), v_hash.push_back(u), v_hash.push_back(v);
+
+    while (cin >> u >> c >> v >> c >> w) {
+        data.push_back({ u, v });
+        v_hash.push_back(u);
+        v_hash.push_back(v);
+    }
     sort(v_hash.begin(), v_hash.end());
     v_hash.erase(unique(v_hash.begin(), v_hash.end()), v_hash.end());
     for (int i = 0; i < v_hash.size(); i++) v_uhash[v_hash[i]] = i;
+    realN = v_uhash.size();
 
-    VVI graph(N);
+    VVI graph(realN);
     for (auto edge : data) graph[v_uhash[edge.first]].push_back(v_uhash[edge.second]);
+
 
     Johnson johson;
 
@@ -232,14 +242,17 @@ int main() {
             }
         });
 
+    
+
+
     auto ans = johson.getAllCircles(graph);
     ios::sync_with_stdio(false);
     cin.tie(0);
 
     cout << ans.size() << endl;
     for (auto vec : ans) {
-        cout << vec[0];
-        for (int i = 1; i < vec.size(); i++) cout << "," << vec[i];
+        cout << v_hash[vec[0]];
+        for (int i = 1; i < vec.size(); i++) cout << "," << v_hash[vec[i]];
         cout << endl;
     }
 }
