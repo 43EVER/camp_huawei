@@ -95,12 +95,18 @@ public:
 
     VVI uniformData(const VVI& vec) {
         VVI data;
-        for (auto & item : vec) {
+        for (auto& item : vec) {
             auto it = min_element(item.begin(), item.end());
             vector<int> tmp(it, item.end());
             tmp.insert(tmp.end(), item.begin(), it);
             data.emplace_back(tmp);
         }
+
+        data.erase(unique(data.begin(), data.end(), [](const auto & a, const auto & b) {
+            if (a.size() != b.size()) return false;
+            for (int i = 0; i < a.size(); i++) if (a[i] != b[i]) return false;
+            return true;
+        }), data.end());
 
         sort(data.begin(), data.end(), [](auto a, auto b) {
             if (a.size() != b.size()) return a.size() < b.size();
@@ -112,10 +118,9 @@ public:
 
 class Johnson {
 public:
-    static int circle_count;        // 调试用，记录环的数量
-    static int start_index;
-    static int sccs_size;
-    static int start_index_rank;
+    int circle_count;        // 调试用，记录环的数量
+    int sccs_size, searched_scc_size;
+    int searched_vertexes;
 
 private:
     vector<bool> blocked_set;
@@ -133,7 +138,7 @@ private:
         blocked_set[from] = false;
         for (auto to : blocked_map[from])
             if (blocked_set[to]) unblock(to);
-        blocked_map[from].erase(from);
+        blocked_map[from].clear();
     }
 
     bool dfs(const VVI& g, int start, int from) {
@@ -141,21 +146,20 @@ private:
         blocked_set[from] = true;
         bool findCircle = false;
 
-        if (tt <= 7 && g[from].size()) {
-            for (auto to : g[from]) {
-                if (to == start) {
-                    if (tt >= 3) {
-                        circles.emplace_back(stk.begin() + 1, stk.begin() + 1 + tt);
-                        circle_count++;
-                    }
-                    findCircle = true;
+        for (auto to : g[from]) {
+            if (to == start) {
+                if (tt >= 3 && tt <= 7) {
+                    circles.emplace_back(stk.begin() + 1, stk.begin() + 1 + tt);
+                    circle_count++;
                 }
-                else if (tt < 7 && !blocked_set[to]) {
-                    findCircle |= dfs(g, start, to);
-                }
+                findCircle = true;
+            }
+            else if (tt < 7 && !blocked_set[to]) {
+                findCircle |= dfs(g, start, to);
             }
         }
 
+        if (tt >= 7) findCircle = true;
         tt--;
         if (findCircle) {
             unblock(from);
@@ -169,7 +173,7 @@ private:
 public:
     Johnson() {
         blocked_set.resize(realN);
-        stk.resize(realN);
+        stk.resize(realN + 100);
         blocked_map.resize(realN);
         init();
     }
@@ -188,25 +192,21 @@ public:
                 VVI subGraph = util.getSubGraphBySet(g, scc, rank);
                 int start = *scc.begin();
                 for (int i = 0; i < realN; i++) if (rank[i] > rank[start]) start = i;;
-                start_index = start;
-                cout << start_index << " " << sccs_size << endl;
-                start_index_rank = rank[start];
+                searched_vertexes++;
+                searched_scc_size = scc.size();
                 usedVrtxes.insert(start);
                 init();
                 dfs(subGraph, start, start);
             }
             vector<int> rank(realN);
             g = util.getSubGraphBySet(g, usedVrtxes, rank, true);
+
             sccs.clear();
             tarjan.getSccs(&g, &sccs);
         }
         return util.uniformData(circles);
     }
 };
-int Johnson::circle_count = 0;
-int Johnson::sccs_size = -1;
-int Johnson::start_index = -1;
-int Johnson::start_index_rank = -1;
 
 int main() {
     ios::sync_with_stdio(false);
@@ -229,7 +229,7 @@ int main() {
     realN = v_uhash.size();
 
     VVI graph(realN);
-    for (auto & edge : data) graph[v_uhash[edge.first]].push_back(v_uhash[edge.second]);
+    for (auto& edge : data) graph[v_uhash[edge.first]].push_back(v_uhash[edge.second]);
 
 
     Johnson johson;
@@ -238,24 +238,24 @@ int main() {
         {
             int last_count = 0;
             while (true) {
-                cout << "searched_circles: " << johson.circle_count << " speed: " << johson.circle_count - last_count << endl;
-                // cout << "sccs's size: " << johson.sccs_size << " searching_index: " << v_hash[johson.start_index] << "start_index_rank: " << johson.start_index_rank << endl;
+                cout << "searched_circles: " << johson.circle_count << " searched_vertexes: " << johson.searched_vertexes <<" speed: " << johson.circle_count - last_count << endl;
+                cout << "sccs_size: " << johson.sccs_size << " searching_scc_size: " << johson.searched_scc_size << endl;
                 last_count = johson.circle_count;
                 this_thread::sleep_for(chrono::seconds(1));
             }
         });
 
+
+
     
-
-
     auto ans = johson.getAllCircles(graph);
     ios::sync_with_stdio(false);
     cin.tie(0);
 
     cout << ans.size() << endl;
-    for (auto vec : ans) {
-        cout << v_hash[vec[0]];
-        for (int i = 1; i < vec.size(); i++) cout << "," << v_hash[vec[i]];
-        cout << endl;
-    }
+    // for (auto vec : ans) {
+    //     cout << v_hash[vec[0]];
+    //     for (int i = 1; i < vec.size(); i++) cout << "," << v_hash[vec[i]];
+    //     cout << endl;
+    // }
 }
