@@ -252,10 +252,11 @@ int main() {
     ios::sync_with_stdio(false);
     cin.tie(0);
 
-    cout << ans.size() << endl;
-    // for (auto vec : ans) {
-    //     cout << v_hash[vec[0]];
-    //     for (int i = 1; i < vec.size(); i++) cout << "," << v_hash[vec[i]];
-    //     cout << endl;
-    // }
+    fstream res("./1_result.txt", ios::out);
+    res << ans.size() << endl;
+    for (auto vec : ans) {
+        res << v_hash[vec[0]];
+        for (int i = 1; i < vec.size(); i++) res << "," << v_hash[vec[i]];
+        res << endl;
+    }
 }
