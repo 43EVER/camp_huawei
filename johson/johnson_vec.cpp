@@ -64,8 +64,8 @@ private:
 
 public:
     Tarjan_vec() {
-        dfn = low = s = vector<int>(N);
-        vis = vector<bool>(N);
+        dfn = low = s = vector<int>(realN);
+        vis = vector<bool>(realN);
         init();
     }
 
@@ -82,12 +82,14 @@ class Util {
 public:
     VVI getSubGraphBySet(const VVI& g, const unordered_set<int>& s, vector<int>& vertex_rank, bool exclude = false) {
         VVI sub(realN);
+        vector<int> in(realN), out(realN);
         for (int from = 0; from < realN; from++)
             if (s.count(from) != exclude) for (auto to : g[from]) if (s.count(to) != exclude) {
                 sub[from].push_back(to);
-                vertex_rank[from]++;
-                vertex_rank[to]++;
+                in[to]++;
+                out[from]++;
             }
+        for (int i = 0; i < realN; i++) vertex_rank[i] = in[i] * out[i];
         return sub;
     }
 
@@ -166,9 +168,9 @@ private:
 
 public:
     Johnson() {
-        blocked_set = vector<bool>(N);
-        stk = vector<int>(N);
-        blocked_map = decltype(blocked_map)(N);
+        blocked_set.resize(realN);
+        stk.resize(realN);
+        blocked_map.resize(realN);
         init();
     }
 
@@ -187,6 +189,7 @@ public:
                 int start = *scc.begin();
                 for (int i = 0; i < realN; i++) if (rank[i] > rank[start]) start = i;;
                 start_index = start;
+                cout << start_index << " " << sccs_size << endl;
                 start_index_rank = rank[start];
                 usedVrtxes.insert(start);
                 init();
@@ -226,7 +229,7 @@ int main() {
     realN = v_uhash.size();
 
     VVI graph(realN);
-    for (auto edge : data) graph[v_uhash[edge.first]].push_back(v_uhash[edge.second]);
+    for (auto & edge : data) graph[v_uhash[edge.first]].push_back(v_uhash[edge.second]);
 
 
     Johnson johson;
@@ -236,7 +239,7 @@ int main() {
             int last_count = 0;
             while (true) {
                 cout << "searched_circles: " << johson.circle_count << " speed: " << johson.circle_count - last_count << endl;
-                cout << "sccs's size: " << johson.sccs_size << " searching_index: " << v_hash[johson.start_index] << "start_index_rank: " << johson.start_index_rank << endl;
+                // cout << "sccs's size: " << johson.sccs_size << " searching_index: " << v_hash[johson.start_index] << "start_index_rank: " << johson.start_index_rank << endl;
                 last_count = johson.circle_count;
                 this_thread::sleep_for(chrono::seconds(1));
             }
