@@ -79,10 +79,14 @@ public:
 
 class Util {
 public:
-    VVI getSubGraphBySet(const VVI& g, const unordered_set<int>& s, bool exclude = false) {
+    VVI getSubGraphBySet(const VVI& g, const unordered_set<int>& s, vector<int>& vertex_rank, bool exclude = false) {
         VVI sub(N);
         for (int from = 0; from < N; from++)
-            if (s.count(from) != exclude) for (auto to : g[from]) if (s.count(to) != exclude) sub[from].push_back(to);
+            if (s.count(from) != exclude) for (auto to : g[from]) if (s.count(to) != exclude) {
+                sub[from].push_back(to);
+                vertex_rank[from]++;
+                vertex_rank[to]++;
+            }
         return sub;
     }
 
@@ -106,6 +110,9 @@ public:
 class Johnson {
 public:
     static int circle_count;        // 调试用，记录环的数量
+    static int start_index;
+    static int sccs_size;
+    static int start_index_rank;
 
 private:
     vector<bool> blocked_set;
@@ -169,13 +176,20 @@ public:
         tarjan.getSccs(&g, &sccs);
         while (sccs.size()) {
             unordered_set<int> usedVrtxes;
+            sccs_size = sccs.size();
             for (const auto& scc : sccs) {
+                vector<int> rank(N);
+                VVI subGraph = util.getSubGraphBySet(g, scc, rank);
                 int start = *scc.begin();
+                for (int i = 0; i < N; i++) if (rank[i] > rank[start]) start = i;;
+                start_index = start;
+                start_index_rank = rank[start];
                 usedVrtxes.insert(start);
                 init();
-                dfs(util.getSubGraphBySet(g, scc), start, start);
+                dfs(subGraph, start, start);
             }
-            g = util.getSubGraphBySet(g, usedVrtxes, true);
+            vector<int> rank(N);
+            g = util.getSubGraphBySet(g, usedVrtxes, rank, true);
             sccs.clear();
             tarjan.getSccs(&g, &sccs);
         }
@@ -183,7 +197,9 @@ public:
     }
 };
 int Johnson::circle_count = 0;
-
+int Johnson::sccs_size = -1;
+int Johnson::start_index = -1;
+int Johnson::start_index_rank = -1;
 
 int main() {
     ios::sync_with_stdio(false);
@@ -203,15 +219,16 @@ int main() {
     VVI graph(N);
     for (auto edge : data) graph[v_uhash[edge.first]].push_back(v_uhash[edge.second]);
 
-    for (int i = 0; i < N; i++) while (graph[i].size() > 10) graph[i].pop_back();
-
     Johnson johson;
 
-    thread th([&johson]
+    thread th([&johson, &v_hash]
         {
+            int last_count = 0;
             while (true) {
+                cout << "searched_circles: " << johson.circle_count << " speed: " << johson.circle_count - last_count << endl;
+                cout << "sccs's size: " << johson.sccs_size << " searching_index: " << v_hash[johson.start_index] << "start_index_rank: " << johson.start_index_rank << endl;
+                last_count = johson.circle_count;
                 this_thread::sleep_for(chrono::seconds(1));
-                cout << johson.circle_count << endl;
             }
         });
 
